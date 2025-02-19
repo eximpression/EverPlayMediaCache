@@ -118,7 +118,7 @@
 {
     BOOL ret = [self.server start:error];
     if (ret) {
-        KTVHCLogHTTPServer(@"%p, Start server success", self);
+        KTVHCLogHTTPServer(@"%p, Start server success, port:%d", self, self.server.port);
     } else {
         KTVHCLogHTTPServer(@"%p, Start server failed", self);
     }
