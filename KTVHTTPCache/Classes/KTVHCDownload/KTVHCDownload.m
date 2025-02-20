@@ -103,7 +103,11 @@ NSString * const KTVHCContentTypeBinaryOctetStream      = @"binary/octet-stream"
                 @"Accept",
                 @"Accept-Encoding",
                 @"Accept-Language",
-                @"Range"];
+                @"Range",
+                @"Authorization",
+                @"Cookie",
+                @"User-Agent"
+        ];
     });
     return obj;
 }
