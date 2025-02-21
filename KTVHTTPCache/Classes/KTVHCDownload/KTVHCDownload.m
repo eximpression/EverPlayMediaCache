@@ -105,8 +105,7 @@ NSString * const KTVHCContentTypeBinaryOctetStream      = @"binary/octet-stream"
                 @"Accept-Language",
                 @"Range",
                 @"Authorization",
-                @"Cookie",
-                @"User-Agent"
+                @"Cookie"
         ];
     });
     return obj;
@@ -126,7 +125,7 @@ NSString * const KTVHCContentTypeBinaryOctetStream      = @"binary/octet-stream"
     [self.additionalHeaders enumerateKeysAndObjectsUsingBlock:^(NSString *key, NSString *obj, BOOL *stop) {
         [mRequest setValue:obj forHTTPHeaderField:key];
     }];
-    return mRequest;;
+    return mRequest;
 }
 
 - (NSURLSessionTask *)downloadWithRequest:(KTVHCDataRequest *)request delegate:(id<KTVHCDownloadDelegate>)delegate
