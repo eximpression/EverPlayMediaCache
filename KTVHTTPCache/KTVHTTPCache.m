@@ -138,6 +138,14 @@
     return [KTVHCDownload download].additionalHeaders;
 }
 
++ (void)downloadSetCredential:(NSURLCredential *)credential{
+    [KTVHCDownload download].credential = credential;
+}
+
++ (NSURLCredential *)downloadCredential{
+    return [KTVHCDownload download].credential;
+}
+
 + (void)downloadSetAcceptableContentTypes:(NSArray<NSString *> *)acceptableContentTypes
 {
     [KTVHCDownload download].acceptableContentTypes = acceptableContentTypes;

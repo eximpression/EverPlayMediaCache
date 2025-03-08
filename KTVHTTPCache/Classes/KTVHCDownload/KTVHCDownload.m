@@ -24,7 +24,7 @@ NSString * const KTVHCContentTypeApplicationMPEG4       = @"application/mp4";
 NSString * const KTVHCContentTypeApplicationOctetStream = @"application/octet-stream";
 NSString * const KTVHCContentTypeBinaryOctetStream      = @"binary/octet-stream";
 
-@interface KTVHCDownload () <NSURLSessionDataDelegate, NSLocking>
+@interface KTVHCDownload () <NSURLSessionDataDelegate, NSURLSessionTaskDelegate, NSLocking>
 
 @property (nonatomic, strong) NSLock *coreLock;
 @property (nonatomic, strong) NSURLSession *session;
@@ -128,6 +128,38 @@ NSString * const KTVHCContentTypeBinaryOctetStream      = @"binary/octet-stream"
     return mRequest;
 }
 
+/**
+ mutating func setValue(authentication credential: URLCredential?, with type: AuthenticationType) {
+     func base64(_ str: String) -> String {
+         let plainData = str.data(using: .utf8)
+         let base64String = plainData!.base64EncodedString(options: [])
+         return base64String
+     }
+     
+     guard let credential = credential else { return }
+     switch type {
+     case .basic:
+         let user = credential.user?.replacingOccurrences(of: ":", with: "") ?? ""
+         let pass = credential.password ?? ""
+         let authStr = "\(user):\(pass)"
+         if let base64Auth = authStr.data(using: .utf8)?.base64EncodedString() {
+             self.setValue("Basic \(base64Auth)", forHTTPHeaderField: "Authorization")
+         }
+     case .digest:
+         // handled by RemoteSessionDelegate
+         break
+     case .oAuth1:
+         if let oauth = credential.password {
+             self.setValue("OAuth \(oauth)", forHTTPHeaderField: "Authorization")
+         }
+     case .oAuth2:
+         if let bearer = credential.password {
+             self.setValue("Bearer \(bearer)", forHTTPHeaderField: "Authorization")
+         }
+     }
+ }
+ */
+
 - (NSURLSessionTask *)downloadWithRequest:(KTVHCDataRequest *)request delegate:(id<KTVHCDownloadDelegate>)delegate
 {
     [self lock];
@@ -136,6 +168,7 @@ NSString * const KTVHCContentTypeBinaryOctetStream      = @"binary/octet-stream"
     [self.requestDictionary setObject:request forKey:task];
     [self.delegateDictionary setObject:delegate forKey:task];
     task.priority = 1.0;
+    task.delegate = self;
     [task resume];
     KTVHCLogDownload(@"%p, Add Request\nrequest : %@\nURL : %@\nheaders : %@\nHTTPRequest headers : %@\nCount : %d", self, request, request.URL, request.headers, mRequest.allHTTPHeaderFields, (int)self.delegateDictionary.count);
     [self beginBackgroundTaskAsync];
@@ -255,6 +288,32 @@ NSString * const KTVHCContentTypeBinaryOctetStream      = @"binary/octet-stream"
     id<KTVHCDownloadDelegate> delegate = [self.delegateDictionary objectForKey:dataTask];
     [delegate ktv_download:self didReceiveData:data];
     KTVHCLogDownload(@"%p, Receive data - End\nLength : %lld\nURL : %@", self, (long long)data.length, dataTask.originalRequest.URL.absoluteString);
+    [self unlock];
+}
+
+- (void)URLSession:(NSURLSession *)session didReceiveChallenge:(NSURLAuthenticationChallenge *)challenge completionHandler:(void (^)(NSURLSessionAuthChallengeDisposition, NSURLCredential * _Nullable))completionHandler{
+    [self lock];
+    if ([challenge previousFailureCount] == 0 && self.credential != nil) {
+        completionHandler(NSURLSessionAuthChallengeUseCredential, self.credential);
+        
+    } else {
+        
+        // Inform the user that the user name and password are incorrect
+        completionHandler(NSURLSessionAuthChallengeCancelAuthenticationChallenge, nil);
+    }
+    [self unlock];
+}
+
+- (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task didReceiveChallenge:(NSURLAuthenticationChallenge *)challenge completionHandler:(void (^)(NSURLSessionAuthChallengeDisposition, NSURLCredential * _Nullable))completionHandler{
+    [self lock];
+    if ([challenge previousFailureCount] == 0 && self.credential != nil) {
+        completionHandler(NSURLSessionAuthChallengeUseCredential, self.credential);
+        
+    } else {
+        
+        // Inform the user that the user name and password are incorrect
+        completionHandler(NSURLSessionAuthChallengeCancelAuthenticationChallenge, nil);
+    }
     [self unlock];
 }
 

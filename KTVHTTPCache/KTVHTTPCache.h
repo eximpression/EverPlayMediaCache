@@ -243,6 +243,15 @@ FOUNDATION_EXPORT const unsigned char KTVHTTPCacheVersionString[];
 + (NSDictionary<NSString *, NSString *> *)downloadAdditionalHeaders;
 
 /**
+ *  Set the current credential for , like digest auth.
+ */
++ (void)downloadSetCredential:(NSURLCredential *_Nullable)credential;
+
+/**
+ *  Get the current credential.
+ */
++ (NSURLCredential *_Nullable)downloadCredential;
+/**
  *  Set the acceptable content types.
  *  The following values are only supported by default:
  *      text/x, video/x, audio/x, application/x-mpegURL, vnd.apple.mpegURL, application/mp4, application/octet-stream, binary/octet-stream
