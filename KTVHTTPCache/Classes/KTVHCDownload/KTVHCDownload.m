@@ -286,12 +286,12 @@ NSString * const KTVHCContentTypeBinaryOctetStream      = @"binary/octet-stream"
     [self lock];
 //    completionHandler(NSURLSessionAuthChallengeUseCredential, [NSURLCredential credentialForTrust:challenge.protectionSpace.serverTrust]);
     if ([challenge previousFailureCount] == 0 && self.credential != nil) {
-        completionHandler(NSURLSessionAuthChallengeUseCredential, self.credential);
+        completionHandler(NSURLSessionAuthChallengePerformDefaultHandling, self.credential);
         
     } else {
         
         // Inform the user that the user name and password are incorrect
-        completionHandler(NSURLSessionAuthChallengeCancelAuthenticationChallenge, nil);
+        completionHandler(NSURLSessionAuthChallengePerformDefaultHandling, nil);
     }
     [self unlock];
 }
