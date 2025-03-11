@@ -277,7 +277,7 @@ NSString * const KTVHCContentTypeBinaryOctetStream      = @"binary/octet-stream"
     } else {
         
         // Inform the user that the user name and password are incorrect
-        completionHandler(NSURLSessionAuthChallengeCancelAuthenticationChallenge, nil);
+        completionHandler(NSURLSessionAuthChallengePerformDefaultHandling, nil);
     }
     [self unlock];
 }
@@ -286,7 +286,7 @@ NSString * const KTVHCContentTypeBinaryOctetStream      = @"binary/octet-stream"
     [self lock];
 //    completionHandler(NSURLSessionAuthChallengeUseCredential, [NSURLCredential credentialForTrust:challenge.protectionSpace.serverTrust]);
     if ([challenge previousFailureCount] == 0 && self.credential != nil) {
-        completionHandler(NSURLSessionAuthChallengePerformDefaultHandling, self.credential);
+        completionHandler(NSURLSessionAuthChallengeUseCredential, self.credential);
         
     } else {
         
