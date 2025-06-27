@@ -136,6 +136,10 @@
     return [KTVHCDownload download].whitelistHeaderKeys;
 }
 
++ (void)externalSetTotalContentLength:(long long)fileSize{
+    [KTVHCDataStorage storage].externalTotalContentLength = fileSize;
+}
+
 + (void)downloadSetAdditionalHeaders:(NSDictionary<NSString *, NSString *> *)additionalHeaders
 {
     [KTVHCDownload download].additionalHeaders = additionalHeaders;

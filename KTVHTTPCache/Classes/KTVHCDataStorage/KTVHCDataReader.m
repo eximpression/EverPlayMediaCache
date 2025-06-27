@@ -146,6 +146,9 @@
     }];
     long long offset = self.request.range.start;
     long long length = KTVHCRangeGetLength(self.request.range);
+    if (length == KTVHCNotFound && [KTVHCDataStorage storage].externalTotalContentLength > 0) {
+        length = [KTVHCDataStorage storage].externalTotalContentLength;
+    }
     long long chunkSize = 0;
     if ([KTVHCDataStorage storage].requestHeaderRangeLength) {
         chunkSize = [KTVHCDataStorage storage].requestHeaderRangeLength(self.request.URL, self.unit.totalLength);
@@ -169,7 +172,7 @@
     
     // 处理剩余需要下载的部分
     if (length > 0) {
-        if (chunkSize > 0) {
+        if (chunkSize > 0 && length != KTVHCNotFound) {
             // 使用公共方法处理分片下载
             [self addNetworkSourcesWithOffset:offset length:length chunkSize:chunkSize toArray:networkSources];
         } else {
@@ -299,9 +302,13 @@
 {
     long long remainingLength = length;
     long long currentOffset = offset;
+    int count = 0;
     while (remainingLength > 0) {
         // 计算当前分片的大小
         long long chunkLength = MIN(remainingLength, chunkSize);
+        if(count > 50){
+            chunkLength = remainingLength;
+        }
         // 确保最后一个分片的结束位置不超过原始请求范围
         long long endOffset = MIN(currentOffset + chunkLength - 1, self.request.range.end);
         
@@ -312,6 +319,7 @@
         
         currentOffset += chunkLength;
         remainingLength -= chunkLength;
+        count++;
     }
 }
 

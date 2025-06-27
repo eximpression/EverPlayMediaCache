@@ -14,11 +14,11 @@
 
 @property (nonatomic, strong) NSLock *coreLock;
 @property (nonatomic, strong) id <KTVHCDataSource> currentSource;
-@property (nonatomic, strong) KTVHCDataNetworkSource *currentNetworkSource;
+@property (nonatomic, strong) NSMutableArray<KTVHCDataNetworkSource *> *currentNetworkSourceArray;
 @property (nonatomic, strong) NSMutableArray<id<KTVHCDataSource>> *sources;
 @property (nonatomic) BOOL calledPrepare;
 @property (nonatomic) BOOL calledReceiveResponse;
-
+@property (nonatomic ,assign)NSInteger networkSourceCount;
 @end
 
 @implementation KTVHCDataSourceManager
@@ -35,6 +35,8 @@
     if (self = [super init]) {
         KTVHCLogAlloc(self);
         self->_sources = [sources mutableCopy];
+        _networkSourceCount = 3;
+        _currentNetworkSourceArray = [NSMutableArray array];
         self->_delegate = delegate;
         self->_delegateQueue = delegateQueue;
         self.coreLock = [[NSLock alloc] init];
@@ -45,7 +47,7 @@
 - (void)dealloc
 {
     KTVHCLogDealloc(self);
-    KTVHCLogDataReader(@"%p, Destory reader\nError : %@\ncurrentSource : %@\ncurrentNetworkSource : %@", self, self.error, self.currentSource, self.currentNetworkSource);
+    KTVHCLogDataReader(@"%p, Destory reader\nError : %@\ncurrentSource : %@\ncurrentNetworkSourceArray : %@", self, self.error, self.currentSource, self.currentNetworkSourceArray);
 }
 
 - (void)prepare
@@ -82,13 +84,17 @@
     self.currentSource = self.sources.firstObject;
     for (id<KTVHCDataSource> obj in self.sources) {
         if ([obj isKindOfClass:[KTVHCDataNetworkSource class]]) {
-            self.currentNetworkSource = obj;
-            break;
+            [self.currentNetworkSourceArray addObject:obj];
+            if (self.currentNetworkSourceArray.count > self.networkSourceCount) {
+                break;
+            }
         }
     }
-    KTVHCLogDataSourceManager(@"%p, Sort source\ncurrentSource : %@\ncurrentNetworkSource : %@", self, self.currentSource, self.currentNetworkSource);
+    KTVHCLogDataSourceManager(@"%p, Sort source\ncurrentSource : %@\ncurrentNetworkSourceArray : %@", self, self.currentSource, self.currentNetworkSourceArray);
     [self.currentSource prepare];
-    [self.currentNetworkSource prepare];
+    for (KTVHCDataNetworkSource *networkSource in self.currentNetworkSourceArray) {
+        [networkSource prepare];
+    }
     [self unlock];
 }
 
@@ -154,7 +160,7 @@
 
 - (KTVHCDataNetworkSource *)nextNetworkSource
 {
-    NSUInteger index = [self.sources indexOfObject:self.currentNetworkSource] + 1;
+    NSUInteger index = [self.sources indexOfObject:self.currentNetworkSourceArray.lastObject] + 1;
     for (; index < self.sources.count; index++) {
         id <KTVHCDataSource> obj = [self.sources objectAtIndex:index];
         if ([obj isKindOfClass:[KTVHCDataNetworkSource class]]) {
@@ -206,8 +212,12 @@
 - (void)ktv_networkSourceDidFinisheDownload:(KTVHCDataNetworkSource *)networkSource
 {
     [self lock];
-    self.currentNetworkSource = [self nextNetworkSource];
-    [self.currentNetworkSource prepare];
+    [self.currentNetworkSourceArray removeObject:networkSource];
+    KTVHCDataNetworkSource *newNetworkSource = [self nextNetworkSource];
+    if (newNetworkSource != nil) {
+        [self.currentNetworkSourceArray addObject:newNetworkSource];
+        [newNetworkSource prepare];
+    }
     [self unlock];
 }
 
