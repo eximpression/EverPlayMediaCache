@@ -146,7 +146,7 @@
     }];
     long long offset = self.request.range.start;
     long long length = KTVHCRangeGetLength(self.request.range);
-    if (length == KTVHCNotFound && [KTVHCDataStorage storage].externalTotalContentLength > 0) {
+    if ((length == KTVHCNotFound || length == 0) && [KTVHCDataStorage storage].externalTotalContentLength > 0) {
         length = [KTVHCDataStorage storage].externalTotalContentLength;
     }
     long long chunkSize = 0;
