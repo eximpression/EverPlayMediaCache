@@ -55,4 +55,5 @@
 
 @property (nonatomic, copy) long long (^requestHeaderRangeLength)(NSURL *URL, long long totalLength);
 @property (nonatomic, assign)long long externalTotalContentLength;
+@property (nonatomic, assign)NSInteger maxSlicingConcurrentDownloadingCount;
 @end

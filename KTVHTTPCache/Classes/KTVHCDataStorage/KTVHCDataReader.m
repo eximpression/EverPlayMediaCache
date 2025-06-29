@@ -192,6 +192,7 @@
     [sources addObjectsFromArray:fileSources];
     [sources addObjectsFromArray:networkSources];
     self.sourceManager = [[KTVHCDataSourceManager alloc] initWithSources:sources delegate:self delegateQueue:self.internalDelegateQueue];
+    self.sourceManager.networkSourceCount = [KTVHCDataStorage storage].maxSlicingConcurrentDownloadingCount;
     [self.sourceManager prepare];
 }
 

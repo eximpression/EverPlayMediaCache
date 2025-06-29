@@ -18,7 +18,6 @@
 @property (nonatomic, strong) NSMutableArray<id<KTVHCDataSource>> *sources;
 @property (nonatomic) BOOL calledPrepare;
 @property (nonatomic) BOOL calledReceiveResponse;
-@property (nonatomic ,assign)NSInteger networkSourceCount;
 @end
 
 @implementation KTVHCDataSourceManager
@@ -94,9 +93,13 @@
     [self.currentSource prepare];
     int index = 0;
     for (KTVHCDataNetworkSource *networkSource in self.currentNetworkSourceArray) {
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1 * index * NSEC_PER_SEC)), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        if (index == 0) {
+            [networkSource prepare];
+        }else{
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1 * index * NSEC_PER_SEC)), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
                 [networkSource prepare];
-        });
+            });
+        }
         index++;
     }
     [self unlock];

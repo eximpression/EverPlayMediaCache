@@ -140,6 +140,10 @@
     [KTVHCDataStorage storage].externalTotalContentLength = fileSize;
 }
 
++ (void)setMaxSlicingConcurrentDownloadingCount:(NSInteger)maxCount{
+    [KTVHCDataStorage storage].maxSlicingConcurrentDownloadingCount = maxCount;
+}
+
 + (void)downloadSetAdditionalHeaders:(NSDictionary<NSString *, NSString *> *)additionalHeaders
 {
     [KTVHCDownload download].additionalHeaders = additionalHeaders;

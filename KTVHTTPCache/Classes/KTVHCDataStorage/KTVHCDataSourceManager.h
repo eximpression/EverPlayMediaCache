@@ -32,5 +32,5 @@
 
 @property (nonatomic, weak, readonly) id <KTVHCDataSourceManagerDelegate> delegate;
 @property (nonatomic, strong, readonly) dispatch_queue_t delegateQueue;
-
+@property (nonatomic ,assign)NSInteger networkSourceCount;
 @end

@@ -257,6 +257,7 @@ FOUNDATION_EXPORT const unsigned char KTVHTTPCacheVersionString[];
 + (NSArray<NSString *> *)downloadWhitelistHeaderKeys;
 
 + (void)externalSetTotalContentLength:(long long)fileSize;
++ (void)setMaxSlicingConcurrentDownloadingCount:(NSInteger)maxCount;
 /**
  *  Set the additional headers.
  *  If you want to add extra headers, set them here.
