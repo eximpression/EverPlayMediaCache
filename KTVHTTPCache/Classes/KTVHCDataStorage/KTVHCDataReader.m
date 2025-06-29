@@ -150,9 +150,17 @@
         length = [KTVHCDataStorage storage].externalTotalContentLength;
     }
     long long chunkSize = 0;
-    if ([KTVHCDataStorage storage].requestHeaderRangeLength) {
-        chunkSize = [KTVHCDataStorage storage].requestHeaderRangeLength(self.request.URL, self.unit.totalLength);
+    
+    long long totalLength = self.unit.totalLength;
+    if (totalLength == 0) {
+        totalLength = length;
     }
+    if (totalLength > 0) {
+        if ([KTVHCDataStorage storage].requestHeaderRangeLength) {
+            chunkSize = [KTVHCDataStorage storage].requestHeaderRangeLength(self.request.URL, totalLength);
+        }
+    }
+        
     for (KTVHCDataFileSource *obj in fileSources) {
         long long delta = obj.range.start + obj.readRange.start - offset;
         if (delta > 0) {
