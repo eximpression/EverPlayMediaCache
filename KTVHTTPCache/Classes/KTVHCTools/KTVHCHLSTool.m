@@ -7,8 +7,13 @@
 //
 
 #import "KTVHCHLSTool.h"
+#import "KTVHCDataUnitPool.h"
+#import "KTVHCDownload.h"
+#import "KTVHCPathTool.h"
 
 @interface KTVHCHLSTool ()
+
+@property (nonatomic, strong) NSURLSession *session;
 
 @end
 
@@ -27,7 +32,9 @@
 - (instancetype)init
 {
     if (self = [super init]) {
-        
+        NSURLSessionConfiguration *configuration = [NSURLSessionConfiguration defaultSessionConfiguration];
+        configuration.timeoutIntervalForRequest = 30;
+        self.session = [NSURLSession sessionWithConfiguration:configuration];
     }
     return self;
 }
@@ -38,17 +45,70 @@
         return self.contentHandler(content);
     }
     if ([content containsString:@"\nhttp"]) {
-        NSMutableArray *array = [content componentsSeparatedByString:@"\n"].mutableCopy;
-        for (NSUInteger index = 0; index < array.count; index++) {
-            NSString *line = array[index];
+        NSMutableArray *components = [content componentsSeparatedByString:@"\n"].mutableCopy;
+        for (NSUInteger index = 0; index < components.count; index++) {
+            NSString *line = components[index];
             if ([line hasPrefix:@"http"]) {
                 line = [@"./" stringByAppendingString:line];
-                [array replaceObjectAtIndex:index withObject:line];
+                [components replaceObjectAtIndex:index withObject:line];
             }
         }
-        content = [array componentsJoinedByString:@"\n"];
+        content = [components componentsJoinedByString:@"\n"];
     }
     return content;
+}
+
+- (NSArray<NSURL *> *)makeURLsForContent:(NSString *)content sourceURL:(NSURL *)sourceURL
+{
+    NSMutableArray<NSURL *> *URLs = [NSMutableArray array];
+    NSArray *components = [content componentsSeparatedByString:@"\n"];
+    for (NSString* obj in components) {
+        NSString *line = [obj stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+        if (![line hasPrefix:@"#"] && line.length > 0) {
+            NSURL *URL = nil;
+            if ([line hasPrefix:@"http"]) {
+                URL = [NSURL URLWithString:line];
+            } else if ([line hasPrefix:@"./http"]) {
+                URL = [NSURL URLWithString:[line stringByReplacingOccurrencesOfString:@"./http" withString:@"http"]];
+            } else {
+                URL = [sourceURL.URLByDeletingLastPathComponent URLByAppendingPathComponent:line];
+            }
+            [URLs addObject:URL];
+        }
+    }
+    return URLs;
+}
+
+- (NSURLSessionDataTask *)taskWithURL:(NSURL *)URL completionHandler:(void (^)(NSData *, NSError *))completionHandler
+{
+    KTVHCDataRequest *dataRequest = [[KTVHCDataRequest alloc] initWithURL:URL headers:nil];
+    NSURLRequest *request = [[KTVHCDownload download] requestWithDataRequest:dataRequest];
+    return [self.session dataTaskWithRequest:request completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error) {
+        if (error || data.length == 0) {
+            completionHandler(nil, error);
+        } else {
+            KTVHCDataUnit *unit = [[KTVHCDataUnitPool pool] unitWithURL:URL];
+            NSURL *completeURL = unit.completeURL;
+            if (completeURL) {
+                completionHandler([NSData dataWithContentsOfURL:completeURL], error);
+            } else {
+                NSString *src = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+                NSString *dst = [[KTVHCHLSTool tool] handleContent:src];
+                data = [dst dataUsingEncoding:NSUTF8StringEncoding];
+                NSString *path = [KTVHCPathTool filePathWithURL:URL offset:0];
+                if ([data writeToFile:path atomically:YES]) {
+                    KTVHCDataUnitItem *unitItem = [[KTVHCDataUnitItem alloc] initWithPath:path offset:0];
+                    [unitItem updateLength:data.length];
+                    [unit insertUnitItem:unitItem];
+                    [unit updateResponseHeaders:((NSHTTPURLResponse *)response).allHeaderFields totalLength:data.length];
+                    completionHandler(data, error);
+                } else {
+                    completionHandler(nil, error);
+                }
+            }
+            [unit workingRelease];
+        }
+    }];
 }
 
 @end

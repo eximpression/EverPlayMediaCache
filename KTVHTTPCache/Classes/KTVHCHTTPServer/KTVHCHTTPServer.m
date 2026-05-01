@@ -10,11 +10,16 @@
 #import "KTVHCHTTPConnection.h"
 #import "KTVHCHTTPHeader.h"
 #import "KTVHCURLTool.h"
+#import "KTVHCCommon.h"
 #import "KTVHCLog.h"
 
 #import <net/if.h>
 #import <ifaddrs.h>
 #import <arpa/inet.h>
+
+#if KTVHC_UIKIT
+#import <UIKit/UIKit.h>
+#endif
 
 @interface KTVHCHTTPServer ()
 
@@ -47,10 +52,12 @@
         [self.server setType:@"_http._tcp."];
         self.pingCondition = [[NSCondition alloc] init];
         self.pingQueue = dispatch_queue_create("KTVHCHTTPServer_pingQueue", DISPATCH_QUEUE_SERIAL);
+#if KTVHC_UIKIT
         [[NSNotificationCenter defaultCenter] addObserver:self
                                                  selector:@selector(applicationWillEnterForeground)
                                                      name:UIApplicationWillEnterForegroundNotification
                                                    object:nil];
+#endif
     }
     return self;
 }
@@ -58,6 +65,7 @@
 - (void)dealloc
 {
     KTVHCLogDealloc(self);
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
     [self stopInternal];
 }
 
@@ -87,6 +95,11 @@
     [self stopInternal];
 }
 
+- (BOOL)isProxyURL:(NSURL *)URL
+{
+    return [URL.absoluteString containsString:[KTVHCHTTPConnection URITokenPlaceHolder]] && [URL.absoluteString containsString:[KTVHCHTTPConnection URITokenLastPathComponent]];
+}
+
 - (NSURL *)URLWithOriginalURL:(NSURL *)URL
 {
     return [self URLWithOriginalURL:URL bindToLocalhost:YES];
@@ -110,6 +123,27 @@
     URL = [NSURL URLWithString:URLString];
     KTVHCLogHTTPServer(@"%p, Return URL\nURL : %@", self, URL);
     return URL;
+}
+
+- (NSURL *)originalURLWithURL:(NSURL *)URL
+{
+    if (![self isProxyURL:URL]) {
+        return URL;
+    }
+    NSArray<NSString *> *components = [URL.absoluteString componentsSeparatedByString:@"/"];
+    if (components.count < 4) {
+        return URL;
+    }
+    NSString *URLString = [[KTVHCURLTool tool] URLDecode:components[3]];
+    if (![URLString hasPrefix:@"http"]) {
+        return URL;
+    }
+    NSURL *originalURL = [NSURL URLWithString:URLString];
+    if (!originalURL) {
+        return URL;
+    }
+    KTVHCLogHTTPServer(@"%p, Return original URL\nURL : %@\noriginal URL : %@", self, URL, originalURL);
+    return originalURL;
 }
 
 #pragma mark - Internal

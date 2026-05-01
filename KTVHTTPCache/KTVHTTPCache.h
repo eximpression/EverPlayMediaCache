@@ -17,6 +17,7 @@ FOUNDATION_EXPORT const unsigned char KTVHTTPCacheVersionString[];
 #import <KTVHTTPCache/KTVHCRange.h>
 #import <KTVHTTPCache/KTVHCDataReader.h>
 #import <KTVHTTPCache/KTVHCDataLoader.h>
+#import <KTVHTTPCache/KTVHCDataHLSLoader.h>
 #import <KTVHTTPCache/KTVHCDataRequest.h>
 #import <KTVHTTPCache/KTVHCDataResponse.h>
 #import <KTVHTTPCache/KTVHCDataCacheItem.h>
@@ -28,6 +29,7 @@ FOUNDATION_EXPORT const unsigned char KTVHTTPCacheVersionString[];
 #import "KTVHCRange.h"
 #import "KTVHCDataReader.h"
 #import "KTVHCDataLoader.h"
+#import "KTVHCDataHLSLoader.h"
 #import "KTVHCDataRequest.h"
 #import "KTVHCDataResponse.h"
 #import "KTVHCDataCacheItem.h"
@@ -76,6 +78,14 @@ FOUNDATION_EXPORT const unsigned char KTVHTTPCacheVersionString[];
 + (BOOL)proxyIsRunning;
 
 /**
+ *  Check if the given URL is a local proxy URL.
+ *
+ *  @param URL The URL to check.
+ *  @return YES if it's a proxy URL; otherwise, NO.
+ */
++ (BOOL)proxyIsProxyURL:(NSURL *)URL;
+
+/**
  *  Convert the URL to the proxy URL.
  *  Only accept HTTP requests coming from localhost i.e. not from the outside network.
  *
@@ -92,6 +102,18 @@ FOUNDATION_EXPORT const unsigned char KTVHTTPCacheVersionString[];
  *  @return If the param is a file URL or the proxy service isn't running, return URL. Otherwise reutrn the proxy URL.
  */
 + (NSURL *)proxyURLWithOriginalURL:(NSURL *)URL bindToLocalhost:(BOOL)bindToLocalhost;
+
+/**
+ *  Restores the original URL from a proxy URL.
+ *
+ *  This is typically used to retrieve the actual HTTP content URL
+ *  from a previously generated local proxy URL.
+ *
+ *  @param URL The proxy URL to be converted back.
+ *  @return The original URL if the input is a valid proxy URL;
+ *          otherwise, returns the input URL unchanged.
+ */
++ (NSURL *)proxyOriginalURLWithURL:(NSURL *)URL;
 
 /**
  *  Data Storage
@@ -124,6 +146,16 @@ FOUNDATION_EXPORT const unsigned char KTVHTTPCacheVersionString[];
  *  @return The data loader for request.
  */
 + (KTVHCDataLoader *)cacheLoaderWithRequest:(KTVHCDataRequest *)request;
+
+/**
+ *  Creates a data loader for the given HLS URL.
+ *
+ *  This loader handles data loading, caching, and proxying for HLS playback.
+ *
+ *  @param request The request of HLS content (e.g., a .m3u8 playlist).
+ *  @return A data loader instance configured for the specified request.
+ */
++ (KTVHCDataHLSLoader *)cacheHLSLoaderWithRequest:(KTVHCDataRequest *)request;
 
 /**
  *  Set the maximum cache length.

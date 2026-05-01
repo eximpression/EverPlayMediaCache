@@ -9,8 +9,6 @@
 #ifndef KTVHCHTTPHeader_h
 #define KTVHCHTTPHeader_h
 
-#import <UIKit/UIKit.h>
-
 #import "HTTPServer.h"
 #import "HTTPConnection.h"
 #import "HTTPMessage.h"

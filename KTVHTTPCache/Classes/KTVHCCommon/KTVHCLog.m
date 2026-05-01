@@ -7,9 +7,14 @@
 //
 
 #import "KTVHCLog.h"
+#import "KTVHCCommon.h"
 #import "KTVHCPathTool.h"
 
+#if KTVHC_UIKIT
 #import <UIKit/UIKit.h>
+#elif KTVHC_APPKIT
+#import <AppKit/AppKit.h>
+#endif
 
 @interface KTVHCLog ()
 
@@ -57,7 +62,11 @@
         [KTVHCPathTool deleteFileAtPath:[KTVHCPathTool logPath]];
         [KTVHCPathTool createFileAtPath:[KTVHCPathTool logPath]];
         self.writingHandle = [NSFileHandle fileHandleForWritingAtPath:[KTVHCPathTool logPath]];
+#if KTVHC_UIKIT
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(applicationWillTerminate:) name:UIApplicationWillTerminateNotification object:nil];
+#elif KTVHC_APPKIT
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(applicationWillTerminate:) name:NSApplicationWillTerminateNotification object:nil];
+#endif
     }
     [self.writingHandle writeData:data];
     [self.lock unlock];
@@ -81,7 +90,11 @@
     [self.writingHandle synchronizeFile];
     [self.writingHandle closeFile];
     self.writingHandle = nil;
+#if KTVHC_UIKIT
     [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationWillTerminateNotification object:nil];
+#elif KTVHC_APPKIT
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:NSApplicationWillTerminateNotification object:nil];
+#endif
     [self.lock unlock];
 }
 

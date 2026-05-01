@@ -10,10 +10,13 @@
 #import "KTVHCData+Internal.h"
 #import "KTVHCDataUnitPool.h"
 #import "KTVHCDataStorage.h"
+#import "KTVHCCommon.h"
 #import "KTVHCError.h"
 #import "KTVHCLog.h"
 
+#if KTVHC_UIKIT
 #import <UIKit/UIKit.h>
+#endif
 
 NSString * const KTVHCContentTypeText                   = @"text/";
 NSString * const KTVHCContentTypeVideo                  = @"video/";
@@ -33,7 +36,9 @@ NSString * const KTVHCContentTypeBinaryOctetStream      = @"binary/octet-stream"
 @property (nonatomic, strong) NSMutableDictionary<NSURLSessionTask *, NSError *> *errorDictionary;
 @property (nonatomic, strong) NSMutableDictionary<NSURLSessionTask *, KTVHCDataRequest *> *requestDictionary;
 @property (nonatomic, strong) NSMutableDictionary<NSURLSessionTask *, id<KTVHCDownloadDelegate>> *delegateDictionary;
+#if KTVHC_UIKIT
 @property (nonatomic) UIBackgroundTaskIdentifier backgroundTask;
+#endif
 
 @end
 
@@ -55,7 +60,6 @@ NSString * const KTVHCContentTypeBinaryOctetStream      = @"binary/octet-stream"
         KTVHCLogAlloc(self);
         self.timeoutInterval = 30.0f;
         self.coreLock = [[NSLock alloc] init];
-        self.backgroundTask = UIBackgroundTaskInvalid;
         self.errorDictionary = [NSMutableDictionary dictionary];
         self.requestDictionary = [NSMutableDictionary dictionary];
         self.delegateDictionary = [NSMutableDictionary dictionary];
@@ -75,6 +79,8 @@ NSString * const KTVHCContentTypeBinaryOctetStream      = @"binary/octet-stream"
                                         KTVHCContentTypeApplicationMPEG4,
                                         KTVHCContentTypeApplicationOctetStream,
                                         KTVHCContentTypeBinaryOctetStream];
+#if KTVHC_UIKIT
+        self.backgroundTask = UIBackgroundTaskInvalid;
         [[NSNotificationCenter defaultCenter] addObserver:self
                                                  selector:@selector(applicationDidEnterBackground:)
                                                      name:UIApplicationDidEnterBackgroundNotification
@@ -83,6 +89,7 @@ NSString * const KTVHCContentTypeBinaryOctetStream      = @"binary/octet-stream"
                                                  selector:@selector(applicationWillEnterForeground:)
                                                      name:UIApplicationWillEnterForegroundNotification
                                                    object:[UIApplication sharedApplication]];
+#endif
     }
     return self;
 }
@@ -143,7 +150,9 @@ NSString * const KTVHCContentTypeBinaryOctetStream      = @"binary/octet-stream"
     }
     [task resume];
     KTVHCLogDownload(@"%p, Add Request\nrequest : %@\nURL : %@\nheaders : %@\nHTTPRequest headers : %@\nCount : %d", self, request, request.URL, request.headers, mRequest.allHTTPHeaderFields, (int)self.delegateDictionary.count);
+#if KTVHC_UIKIT
     [self beginBackgroundTaskAsync];
+#endif
     [self unlock];
     return task;
 }
@@ -160,9 +169,11 @@ NSString * const KTVHCContentTypeBinaryOctetStream      = @"binary/octet-stream"
     [self.delegateDictionary removeObjectForKey:task];
     [self.requestDictionary removeObjectForKey:task];
     [self.errorDictionary removeObjectForKey:task];
+#if KTVHC_UIKIT
     if (self.delegateDictionary.count <= 0 && self.backgroundTask != UIBackgroundTaskInvalid) {
         [self endBackgroundTaskDelay];
     }
+#endif
     [self unlock];
 }
 
@@ -307,6 +318,7 @@ NSString * const KTVHCContentTypeBinaryOctetStream      = @"binary/octet-stream"
 
 #pragma mark - Background Task
 
+#if KTVHC_UIKIT
 - (void)applicationDidEnterBackground:(NSNotification *)notification
 {
     [self beginBackgroundTaskIfNeeded];
@@ -357,5 +369,6 @@ NSString * const KTVHCContentTypeBinaryOctetStream      = @"binary/octet-stream"
         [self endBackgroundTaskIfNeeded:NO];
     });
 }
+#endif
 
 @end

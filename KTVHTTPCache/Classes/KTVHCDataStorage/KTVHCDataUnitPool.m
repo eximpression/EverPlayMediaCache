@@ -11,9 +11,14 @@
 #import "KTVHCData+Internal.h"
 #import "KTVHCPathTool.h"
 #import "KTVHCURLTool.h"
+#import "KTVHCCommon.h"
 #import "KTVHCLog.h"
 
+#if KTVHC_UIKIT
 #import <UIKit/UIKit.h>
+#elif KTVHC_APPKIT
+#import <AppKit/AppKit.h>
+#endif
 
 @interface KTVHCDataUnitPool () <NSLocking, KTVHCDataUnitDelegate>
 
@@ -46,9 +51,13 @@
             obj.delegate = self;
         }
         self.archiveQueue = dispatch_queue_create("KTVHTTPCache-archiveQueue", DISPATCH_QUEUE_SERIAL);
+#if KTVHC_UIKIT
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(applicationWillTerminate:) name:UIApplicationWillTerminateNotification object:nil];
-        [[NSNotificationCenter defaultCenter]  addObserver:self selector:@selector(applicationDidEnterBackground:) name:UIApplicationDidEnterBackgroundNotification object:nil];
-        [[NSNotificationCenter defaultCenter]  addObserver:self selector:@selector(applicationWillResignActive:) name:UIApplicationWillResignActiveNotification object:nil];
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(applicationDidEnterBackground:) name:UIApplicationDidEnterBackgroundNotification object:nil];
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(applicationWillResignActive:) name:UIApplicationWillResignActiveNotification object:nil];
+#elif KTVHC_APPKIT
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(applicationWillTerminate:) name:NSApplicationWillTerminateNotification object:nil];
+#endif
         KTVHCLogDataUnitPool(@"%p, Create Pool\nUnits : %@", self, self.unitQueue.allUnits);
     }
     return self;
