@@ -270,30 +270,29 @@ NSString * const KTVHCContentTypeBinaryOctetStream      = @"binary/octet-stream"
 
 - (void)URLSession:(NSURLSession *)session didReceiveChallenge:(NSURLAuthenticationChallenge *)challenge completionHandler:(void (^)(NSURLSessionAuthChallengeDisposition, NSURLCredential * _Nullable))completionHandler{
     [self lock];
-//    completionHandler(NSURLSessionAuthChallengeUseCredential, [NSURLCredential credentialForTrust:challenge.protectionSpace.serverTrust]);
-    if ([challenge previousFailureCount] == 0 && self.credential != nil) {
-        completionHandler(NSURLSessionAuthChallengeUseCredential, self.credential);
-        
-    } else {
-        
-        // Inform the user that the user name and password are incorrect
-        completionHandler(NSURLSessionAuthChallengePerformDefaultHandling, nil);
-    }
+    [self handleAuthenticationChallenge:challenge completionHandler:completionHandler];
     [self unlock];
 }
 
 - (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task didReceiveChallenge:(NSURLAuthenticationChallenge *)challenge completionHandler:(void (^)(NSURLSessionAuthChallengeDisposition, NSURLCredential * _Nullable))completionHandler{
     [self lock];
-//    completionHandler(NSURLSessionAuthChallengeUseCredential, [NSURLCredential credentialForTrust:challenge.protectionSpace.serverTrust]);
+    [self handleAuthenticationChallenge:challenge completionHandler:completionHandler];
+    [self unlock];
+}
+
+- (void)handleAuthenticationChallenge:(NSURLAuthenticationChallenge *)challenge completionHandler:(void (^)(NSURLSessionAuthChallengeDisposition, NSURLCredential * _Nullable))completionHandler
+{
+    if ([challenge.protectionSpace.authenticationMethod isEqualToString:NSURLAuthenticationMethodServerTrust] &&
+        challenge.protectionSpace.serverTrust != nil) {
+        completionHandler(NSURLSessionAuthChallengeUseCredential, [NSURLCredential credentialForTrust:challenge.protectionSpace.serverTrust]);
+        return;
+    }
+    
     if ([challenge previousFailureCount] == 0 && self.credential != nil) {
         completionHandler(NSURLSessionAuthChallengeUseCredential, self.credential);
-        
     } else {
-        
-        // Inform the user that the user name and password are incorrect
         completionHandler(NSURLSessionAuthChallengePerformDefaultHandling, nil);
     }
-    [self unlock];
 }
 
 - (void)lock
