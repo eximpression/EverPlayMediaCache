@@ -293,15 +293,14 @@ NSString * const KTVHCContentTypeBinaryOctetStream      = @"binary/octet-stream"
 
 - (void)handleAuthenticationChallenge:(NSURLAuthenticationChallenge *)challenge completionHandler:(void (^)(NSURLSessionAuthChallengeDisposition, NSURLCredential * _Nullable))completionHandler
 {
-//    if ([challenge.protectionSpace.authenticationMethod isEqualToString:NSURLAuthenticationMethodServerTrust] &&
-//        challenge.protectionSpace.serverTrust != nil) {
-//        completionHandler(NSURLSessionAuthChallengeUseCredential, [NSURLCredential credentialForTrust:challenge.protectionSpace.serverTrust]);
-//        return;
-//    }
-    
     if ([challenge previousFailureCount] == 0 && self.credential != nil) {
         completionHandler(NSURLSessionAuthChallengeUseCredential, self.credential);
     } else {
+        if ([challenge.protectionSpace.authenticationMethod isEqualToString:NSURLAuthenticationMethodServerTrust] &&
+            challenge.protectionSpace.serverTrust != nil) {
+            completionHandler(NSURLSessionAuthChallengeUseCredential, [NSURLCredential credentialForTrust:challenge.protectionSpace.serverTrust]);
+            return;
+        }
         completionHandler(NSURLSessionAuthChallengePerformDefaultHandling, nil);
     }
 }
